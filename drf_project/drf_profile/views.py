@@ -1,8 +1,11 @@
-from rest_framework import status, viewsets
+from rest_framework import status, viewsets, filters
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.authtoken.serializers import AuthTokenSerializer
+from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from drf_profile import serializers
+from drf_profile import serializers, models, permissions
 
 
 class HelloApiView(APIView):
@@ -97,3 +100,25 @@ class HelloViewSet(viewsets.ViewSet):
         """ Handles destroying an object. """
 
         return Response({'http_method': 'DESTROY'})
+
+
+class UserProfileViewSet(viewsets.ModelViewSet):
+    """ Handles creating, updating profiles """
+
+    serializer_class = serializers.UserProfileSerializer
+    queryset = models.UserProfile.objects.all()
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (permissions.UpdateOwnProfile,)
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name', 'email',)
+
+
+class LoginViewSet(viewsets.ViewSet):
+    """ Checks email and password and returns an auth token. """
+
+    serializer_class = AuthTokenSerializer
+
+    def create(self, request):
+        """ Use the ObtainAuthToken APIView to validate and create a token. """
+
+        return ObtainAuthToken().post(request)
